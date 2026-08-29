@@ -1,0 +1,6 @@
+{
+  "name": "Arshad Collection",
+  "description": "Premium e-commerce shopping experience for fashion, home textiles, cultural goods, and lifestyle products with Style • Quality • Trust.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
