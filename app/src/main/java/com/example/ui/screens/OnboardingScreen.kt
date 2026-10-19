@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.ui.components.ArshadBrandLogo
 import com.example.ui.theme.*
 import kotlinx.coroutines.launch
 
@@ -93,8 +94,9 @@ fun OnboardingScreen(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+          ArshadBrandLogo(size = 32)
           Text(
-            text = "ARSHAD COLLECTION",
+            text = "ARSHAD COLLECTION™",
             style = MaterialTheme.typography.titleSmall,
             fontWeight = FontWeight.Bold,
             color = GoldPrimary,
@@ -130,25 +132,33 @@ fun OnboardingScreen(
           horizontalAlignment = Alignment.CenterHorizontally,
           verticalArrangement = Arrangement.Center
         ) {
-          // Luxury Icon Circle
-          Box(
-            modifier = Modifier
-              .size(130.dp)
-              .clip(CircleShape)
-              .background(
-                Brush.radialGradient(
-                  listOf(BlackSurfaceVariant, BlackMain)
-                )
-              )
-              .border(1.5.dp, GoldPrimary, CircleShape),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              imageVector = page.icon,
-              contentDescription = null,
-              tint = GoldPrimary,
-              modifier = Modifier.size(56.dp)
+          if (index == 0) {
+            // Official Brand Monogram & Emblem Showcase
+            ArshadBrandLogo(
+              size = 135,
+              modifier = Modifier.clip(RoundedCornerShape(16.dp))
             )
+          } else {
+            // Luxury Icon Circle
+            Box(
+              modifier = Modifier
+                .size(130.dp)
+                .clip(CircleShape)
+                .background(
+                  Brush.radialGradient(
+                    listOf(BlackSurfaceVariant, BlackMain)
+                  )
+                )
+                .border(1.5.dp, GoldPrimary, CircleShape),
+              contentAlignment = Alignment.Center
+            ) {
+              Icon(
+                imageVector = page.icon,
+                contentDescription = null,
+                tint = GoldPrimary,
+                modifier = Modifier.size(56.dp)
+              )
+            }
           }
 
           Spacer(modifier = Modifier.height(28.dp))

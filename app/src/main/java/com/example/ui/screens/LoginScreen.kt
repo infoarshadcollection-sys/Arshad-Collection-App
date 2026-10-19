@@ -95,7 +95,7 @@ fun LoginScreen(
 
       // Official Arshad Collection Logo (Prominently centered at top)
       ArshadBrandLogo(
-        size = 92,
+        size = 110,
         modifier = Modifier.testTag("login_official_logo")
       )
 
@@ -110,7 +110,7 @@ fun LoginScreen(
       )
 
       Text(
-        text = "Welcome to Arshad Collection • Style • Quality • Trust",
+        text = "Welcome to Arshad Collection™ • Style • Quality • Trust",
         color = GoldPrimary,
         fontSize = 13.sp,
         textAlign = TextAlign.Center,

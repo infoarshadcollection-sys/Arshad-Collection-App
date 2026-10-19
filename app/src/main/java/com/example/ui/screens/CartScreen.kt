@@ -29,6 +29,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.CartItem
 import com.example.ui.components.EmptyStateView
+import com.example.ui.components.ProductImageView
 import com.example.ui.theme.*
 import com.example.ui.viewmodel.ShopViewModel
 import com.example.util.CurrencyFormatter
@@ -385,16 +386,12 @@ fun CartItemRow(
           .background(BlackSurfaceVariant),
         contentAlignment = Alignment.Center
       ) {
-        if (imageResId != 0) {
-          Image(
-            painter = painterResource(id = imageResId),
-            contentDescription = item.product.name,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-          )
-        } else {
-          Icon(imageVector = Icons.Default.ShoppingBag, contentDescription = null, tint = GoldPrimary)
-        }
+        ProductImageView(
+          imageSource = firstImg,
+          contentDescription = item.product.name,
+          modifier = Modifier.fillMaxSize(),
+          contentScale = ContentScale.Crop
+        )
       }
 
       // Details

@@ -29,8 +29,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,9 +60,9 @@ fun FloatingAiAssistantButton(
   val infiniteTransition = rememberInfiniteTransition(label = "pulse")
   val pulseScale by infiniteTransition.animateFloat(
     initialValue = 1f,
-    targetValue = 1.06f,
+    targetValue = 1.05f,
     animationSpec = infiniteRepeatable(
-      animation = tween(1200, easing = FastOutSlowInEasing),
+      animation = tween(1500, easing = FastOutSlowInEasing),
       repeatMode = RepeatMode.Reverse
     ),
     label = "scale"
@@ -69,9 +71,11 @@ fun FloatingAiAssistantButton(
   Surface(
     onClick = onClick,
     modifier = modifier
-      .padding(bottom = 16.dp, end = 16.dp)
-      .shadow(12.dp, RoundedCornerShape(28.dp)),
-    shape = RoundedCornerShape(28.dp),
+      .padding(bottom = 12.dp, end = 16.dp)
+      .graphicsLayer(scaleX = pulseScale, scaleY = pulseScale)
+      .shadow(6.dp, RoundedCornerShape(20.dp))
+      .testTag("floating_ai_button"),
+    shape = RoundedCornerShape(20.dp),
     color = Color.Transparent
   ) {
     Box(
@@ -84,53 +88,29 @@ fun FloatingAiAssistantButton(
               GoldLight
             )
           ),
-          shape = RoundedCornerShape(28.dp)
+          shape = RoundedCornerShape(20.dp)
         )
-        .border(1.5.dp, Color.White.copy(alpha = 0.4f), RoundedCornerShape(28.dp))
-        .padding(horizontal = 16.dp, vertical = 12.dp),
+        .border(1.dp, GoldLight.copy(alpha = 0.6f), RoundedCornerShape(20.dp))
+        .padding(horizontal = 12.dp, vertical = 8.dp),
       contentAlignment = Alignment.Center
     ) {
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(4.dp)
       ) {
-        Box(
-          modifier = Modifier
-            .size(28.dp)
-            .clip(CircleShape)
-            .background(BlackMain.copy(alpha = 0.25f)),
-          contentAlignment = Alignment.Center
-        ) {
-          Icon(
-            imageVector = Icons.Default.AutoAwesome,
-            contentDescription = "AI Assistant",
-            tint = BlackMain,
-            modifier = Modifier.size(18.dp)
-          )
-        }
-
-        Column {
-          Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(
-              text = "Ask AI Assistant",
-              color = BlackMain,
-              fontWeight = FontWeight.ExtraBold,
-              fontSize = 13.sp
-            )
-            Box(
-              modifier = Modifier
-                .size(6.dp)
-                .clip(CircleShape)
-                .background(Color(0xFF00C853))
-            )
-          }
-          Text(
-            text = "English • اردو • Roman Urdu",
-            color = BlackMain.copy(alpha = 0.75f),
-            fontWeight = FontWeight.Medium,
-            fontSize = 9.5.sp
-          )
-        }
+        Icon(
+          imageVector = Icons.Default.AutoAwesome,
+          contentDescription = "AI",
+          tint = BlackMain,
+          modifier = Modifier.size(16.dp)
+        )
+        Text(
+          text = "AI",
+          color = BlackMain,
+          fontWeight = FontWeight.ExtraBold,
+          fontSize = 13.sp,
+          letterSpacing = 0.5.sp
+        )
       }
     }
   }
@@ -217,24 +197,7 @@ fun AiAssistantDialog(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp)
           ) {
-            Box(
-              modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
-                .background(
-                  brush = Brush.linearGradient(
-                    colors = listOf(GoldPrimary, GoldDark)
-                  )
-                ),
-              contentAlignment = Alignment.Center
-            ) {
-              Icon(
-                imageVector = Icons.Default.AutoAwesome,
-                contentDescription = null,
-                tint = BlackMain,
-                modifier = Modifier.size(22.dp)
-              )
-            }
+            ArshadBrandLogo(size = 40)
 
             Column {
               Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -479,21 +442,7 @@ fun ChatMessageBubble(
       modifier = Modifier.fillMaxWidth(if (isUser) 0.9f else 0.98f)
     ) {
       if (!isUser) {
-        Box(
-          modifier = Modifier
-            .size(28.dp)
-            .clip(CircleShape)
-            .background(GoldPrimary)
-            .padding(4.dp),
-          contentAlignment = Alignment.Center
-        ) {
-          Icon(
-            imageVector = Icons.Default.AutoAwesome,
-            contentDescription = null,
-            tint = BlackMain,
-            modifier = Modifier.size(16.dp)
-          )
-        }
+        ArshadBrandLogo(size = 28)
         Spacer(modifier = Modifier.width(6.dp))
       }
 

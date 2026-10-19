@@ -3,6 +3,7 @@ package com.example.ui.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
+import coil.compose.SubcomposeAsyncImage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -41,41 +42,23 @@ fun ArshadBrandLogo(
   modifier: Modifier = Modifier,
   size: Int = 40
 ) {
-  val context = LocalContext.current
-  val logoResId = remember(context) {
-    var id = context.resources.getIdentifier("logo_arshad_official", "drawable", context.packageName)
-    if (id == 0) {
-      id = context.resources.getIdentifier("arshad_official_logo_1787990063785", "drawable", context.packageName)
-    }
-    id
-  }
-
   Box(
     modifier = modifier
       .size(size.dp)
       .aspectRatio(1f)
       .clip(RoundedCornerShape(8.dp))
-      .background(Color.Black),
+      .background(Color.Black)
+      .border(0.8.dp, GoldPrimary.copy(alpha = 0.35f), RoundedCornerShape(8.dp)),
     contentAlignment = Alignment.Center
   ) {
-    if (logoResId != 0) {
-      Image(
-        painter = painterResource(id = logoResId),
-        contentDescription = "Official Arshad Collection Logo",
-        modifier = Modifier
-          .fillMaxSize()
-          .aspectRatio(1f),
-        contentScale = ContentScale.Fit
-      )
-    } else {
-      Text(
-        text = "AC",
-        color = GoldPrimary,
-        fontWeight = FontWeight.Bold,
-        fontFamily = FontFamily.Serif,
-        fontSize = (size / 2.2).sp
-      )
-    }
+    Image(
+      painter = painterResource(id = com.example.R.drawable.arshad_official_logo),
+      contentDescription = "Arshad Collection™ Official Logo",
+      modifier = Modifier
+        .fillMaxSize()
+        .aspectRatio(1f),
+      contentScale = ContentScale.Fit
+    )
   }
 }
 
@@ -109,12 +92,12 @@ fun ArshadTopBar(
     ) {
       Row(
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
       ) {
         if (showBackButton) {
           IconButton(
             onClick = onBackClick,
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier.size(38.dp)
           ) {
             Icon(
               imageVector = Icons.Default.ArrowBack,
@@ -122,13 +105,12 @@ fun ArshadTopBar(
               tint = GoldPrimary
             )
           }
-        } else {
-          ArshadBrandLogo(size = 38)
         }
+        ArshadBrandLogo(size = 38)
 
         Column {
           Text(
-            text = title ?: "ARSHAD COLLECTION",
+            text = title ?: "ARSHAD COLLECTION™",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = GoldPrimary,
@@ -251,32 +233,12 @@ fun ProductCard(
           .height(170.dp)
           .background(BlackSurface)
       ) {
-        if (imageResId != 0) {
-          Image(
-            painter = painterResource(id = imageResId),
-            contentDescription = product.name,
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
-          )
-        } else {
-          Box(
-            modifier = Modifier
-              .fillMaxSize()
-              .background(
-                Brush.verticalGradient(
-                  listOf(BlackSurfaceVariant, BlackMain)
-                )
-              ),
-            contentAlignment = Alignment.Center
-          ) {
-            Icon(
-              imageVector = Icons.Default.ShoppingBag,
-              contentDescription = null,
-              tint = GoldPrimary.copy(alpha = 0.5f),
-              modifier = Modifier.size(48.dp)
-            )
-          }
-        }
+        ProductImageView(
+          imageSource = product.images.firstOrNull() ?: "",
+          contentDescription = product.name,
+          modifier = Modifier.fillMaxSize(),
+          contentScale = ContentScale.Crop
+        )
 
         // Discount Tag
         if (product.discountPercent > 0) {
@@ -462,22 +424,15 @@ fun CategoryChip(
   isSelected: Boolean = false,
   onClick: () -> Unit
 ) {
-  val context = LocalContext.current
-  val imageResId = remember(category.imageResName) {
-    if (category.imageResName.isNotBlank()) {
-      context.resources.getIdentifier(category.imageResName, "drawable", context.packageName)
-    } else 0
-  }
-
   Column(
     horizontalAlignment = Alignment.CenterHorizontally,
     modifier = Modifier
-      .width(76.dp)
+      .width(86.dp)
       .clickable { onClick() }
   ) {
     Box(
       modifier = Modifier
-        .size(60.dp)
+        .size(64.dp)
         .clip(CircleShape)
         .background(if (isSelected) GoldPrimary else BlackSurfaceVariant)
         .border(
@@ -487,34 +442,92 @@ fun CategoryChip(
         ),
       contentAlignment = Alignment.Center
     ) {
-      if (imageResId != 0) {
-        Image(
-          painter = painterResource(id = imageResId),
-          contentDescription = category.name,
-          modifier = Modifier.fillMaxSize(),
-          contentScale = ContentScale.Crop
-        )
-      } else {
-        Icon(
-          imageVector = Icons.Default.Category,
-          contentDescription = null,
-          tint = if (isSelected) BlackMain else GoldPrimary,
-          modifier = Modifier.size(26.dp)
-        )
-      }
+      ProductImageView(
+        imageSource = category.imageResName,
+        contentDescription = category.name,
+        modifier = Modifier.fillMaxSize(),
+        contentScale = ContentScale.Crop
+      )
     }
 
     Spacer(modifier = Modifier.height(6.dp))
 
     Text(
       text = category.name,
-      style = MaterialTheme.typography.labelSmall,
-      color = if (isSelected) GoldPrimary else MaterialTheme.colorScheme.onSurface,
+      style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp, lineHeight = 13.sp),
+      color = if (isSelected) GoldPrimary else Color.White,
       fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
       textAlign = TextAlign.Center,
-      maxLines = 1,
-      overflow = TextOverflow.Ellipsis
+      maxLines = 2,
+      minLines = 2,
+      overflow = TextOverflow.Ellipsis,
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(horizontal = 2.dp)
     )
+  }
+}
+
+@Composable
+fun CategoryCard(
+  category: Category,
+  onClick: () -> Unit,
+  modifier: Modifier = Modifier
+) {
+  Card(
+    modifier = modifier
+      .clip(RoundedCornerShape(14.dp))
+      .clickable { onClick() }
+      .border(1.dp, BlackCardBorder, RoundedCornerShape(14.dp)),
+    colors = CardDefaults.cardColors(containerColor = BlackSurfaceVariant)
+  ) {
+    Column(
+      modifier = Modifier
+        .fillMaxWidth()
+        .padding(14.dp),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+      Box(
+        modifier = Modifier
+          .size(68.dp)
+          .clip(CircleShape)
+          .background(BlackSurface)
+          .border(1.5.dp, GoldPrimary, CircleShape),
+        contentAlignment = Alignment.Center
+      ) {
+        ProductImageView(
+          imageSource = category.imageResName,
+          contentDescription = category.name,
+          modifier = Modifier.fillMaxSize(),
+          contentScale = ContentScale.Crop
+        )
+      }
+
+      Text(
+        text = category.name,
+        style = MaterialTheme.typography.titleSmall,
+        fontWeight = FontWeight.Bold,
+        color = Color.White,
+        textAlign = TextAlign.Center,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Ellipsis
+      )
+
+      Surface(
+        color = GoldPrimary.copy(alpha = 0.15f),
+        shape = RoundedCornerShape(12.dp)
+      ) {
+        Text(
+          text = "${category.productCount} Items",
+          color = GoldPrimary,
+          fontSize = 11.sp,
+          fontWeight = FontWeight.SemiBold,
+          modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+        )
+      }
+    }
   }
 }
 

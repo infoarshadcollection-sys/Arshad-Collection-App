@@ -2,6 +2,7 @@ package com.example.data.model
 
 data class Product(
   val id: Long = 0,
+  val supabaseId: String = "",
   val name: String,
   val slug: String,
   val description: String,

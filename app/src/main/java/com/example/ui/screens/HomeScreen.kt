@@ -2,6 +2,7 @@ package com.example.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
+import coil.compose.SubcomposeAsyncImage
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -75,7 +76,7 @@ fun HomeScreen(
       Box(
         modifier = Modifier
           .fillMaxWidth()
-          .padding(horizontal = 16.dp, vertical = 6.dp)
+          .padding(horizontal = 16.dp, vertical = 4.dp)
           .clip(RoundedCornerShape(12.dp))
           .background(BlackSurfaceVariant)
           .border(1.dp, BlackCardBorder, RoundedCornerShape(12.dp))
@@ -90,8 +91,9 @@ fun HomeScreen(
         ) {
           Icon(
             imageVector = Icons.Default.Search,
-            contentDescription = null,
-            tint = GoldPrimary
+            contentDescription = "Search Arshad Collection",
+            tint = GoldPrimary,
+            modifier = Modifier.size(20.dp)
           )
           Text(
             text = "Search Shalwar Kameez, Bedsheets, Crockery...",
@@ -108,9 +110,16 @@ fun HomeScreen(
     item {
       val context = LocalContext.current
       val activeBanner = banners.firstOrNull()
-      val bannerResId = remember(activeBanner) {
-        val res = activeBanner?.imageResName ?: "hero_banner_luxury_1787981532790"
-        context.resources.getIdentifier(res, "drawable", context.packageName)
+      val bannerPath = (activeBanner?.imageResName ?: "hero_banner_luxury_1787981532790").trim()
+      val isBannerExternal = remember(bannerPath) {
+        bannerPath.startsWith("http://") || bannerPath.startsWith("https://") ||
+        bannerPath.startsWith("file://") || bannerPath.startsWith("content://") ||
+        bannerPath.startsWith("/")
+      }
+      val bannerResId = remember(bannerPath, isBannerExternal) {
+        if (!isBannerExternal && bannerPath.isNotBlank()) {
+          context.resources.getIdentifier(bannerPath, "drawable", context.packageName)
+        } else 0
       }
 
       Box(
@@ -121,7 +130,14 @@ fun HomeScreen(
           .clip(RoundedCornerShape(16.dp))
           .border(1.dp, GoldPrimary.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
       ) {
-        if (bannerResId != 0) {
+        if (isBannerExternal) {
+          SubcomposeAsyncImage(
+            model = bannerPath,
+            contentDescription = "Promo Banner",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+          )
+        } else if (bannerResId != 0) {
           Image(
             painter = painterResource(id = bannerResId),
             contentDescription = "Promo Banner",
@@ -348,7 +364,7 @@ fun HomeScreen(
     item {
       ProductSectionRow(
         title = "New Arrivals",
-        subtitle = "Latest additions to Arshad Collection",
+        subtitle = "Latest additions to Arshad Collection™",
         products = newArrivals,
         wishlistedIds = wishlistedIds,
         onProductClick = onProductClick,
@@ -427,7 +443,7 @@ fun HomeScreen(
             ArshadBrandLogo(size = 32)
             Column {
               Text(
-                text = "Arshad Collection Guarantee",
+                text = "Arshad Collection™ Guarantee",
                 fontWeight = FontWeight.Bold,
                 color = GoldPrimary,
                 fontSize = 14.sp

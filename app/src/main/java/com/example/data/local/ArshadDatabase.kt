@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
     AppSettingsEntity::class,
     UserEntity::class
   ],
-  version = 2,
+  version = 3,
   exportSchema = false
 )
 @TypeConverters(Converters::class)

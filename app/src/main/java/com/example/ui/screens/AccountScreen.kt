@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.components.ArshadBrandLogo
@@ -274,7 +275,7 @@ fun AccountScreen(
 
           AccountMenuRow(
             icon = Icons.Outlined.Info,
-            title = "About Arshad Collection",
+            title = "About Arshad Collection™",
             subtitle = "Our brand heritage, vision, and craftsmanship",
             onClick = { showAboutDialog = true }
           )
@@ -364,18 +365,43 @@ fun AccountScreen(
     AlertDialog(
       onDismissRequest = { showAboutDialog = false },
       containerColor = BlackSurface,
-      title = { Text("About Arshad Collection", color = GoldPrimary, fontWeight = FontWeight.Bold) },
+      title = {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          ArshadBrandLogo(size = 36)
+          Text("About Arshad Collection™", color = GoldPrimary, fontWeight = FontWeight.Bold)
+        }
+      },
       text = {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(
+          verticalArrangement = Arrangement.spacedBy(12.dp),
+          horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+          // Centered Brand Emblem
+          ArshadBrandLogo(
+            size = 90,
+            modifier = Modifier
+              .clip(RoundedCornerShape(12.dp))
+              .padding(vertical = 4.dp)
+          )
+
           Text(
-            "Arshad Collection is a premium online retail and reselling enterprise founded by Arshad Ahmed. Built on the core values of Style • Quality • Trust, we deliver premium Men's and Women's Eastern apparel, luxury home textiles, authentic Multani cultural handicrafts, crockery, and smart lifestyle gadgets to households across Pakistan.",
+            "Arshad Collection™ is a premium online retail and reselling enterprise founded by Arshad Ahmed. Built on the core values of Style • Quality • Trust, we deliver premium Men's and Women's Eastern apparel, luxury home textiles, authentic Multani cultural handicrafts, crockery, and smart lifestyle gadgets to households across Pakistan.",
             color = TextSecondaryDark,
             fontSize = 13.sp,
-            lineHeight = 19.sp
+            lineHeight = 19.sp,
+            textAlign = TextAlign.Start
           )
-          Text("Founder & Owner: Arshad Ahmed", color = GoldLight, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-          Text("WhatsApp: 0341-3399629", color = WhatsAppGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
-          Text("Email: info.arshadcollection@gmail.com", color = GoldPrimary, fontSize = 12.sp)
+          Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(4.dp)
+          ) {
+            Text("Founder & Owner: Arshad Ahmed", color = GoldLight, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text("WhatsApp: 0341-3399629", color = WhatsAppGreen, fontWeight = FontWeight.Bold, fontSize = 12.sp)
+            Text("Email: info.arshadcollection@gmail.com", color = GoldPrimary, fontSize = 12.sp)
+          }
         }
       },
       confirmButton = {
@@ -391,7 +417,15 @@ fun AccountScreen(
     AlertDialog(
       onDismissRequest = { showPolicyDialog = false },
       containerColor = BlackSurface,
-      title = { Text("Return & Exchange Policy", color = GoldPrimary, fontWeight = FontWeight.Bold) },
+      title = {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          ArshadBrandLogo(size = 32)
+          Text("Return & Exchange Policy", color = GoldPrimary, fontWeight = FontWeight.Bold)
+        }
+      },
       text = {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
           Text("1. 7-Day Exchange: Any damaged or incorrect item can be exchanged within 7 days of delivery.", color = TextSecondaryDark, fontSize = 13.sp)
@@ -413,7 +447,15 @@ fun AccountScreen(
     AlertDialog(
       onDismissRequest = { showNotificationsDialog = false },
       containerColor = BlackSurface,
-      title = { Text("Notifications & Alerts", color = GoldPrimary, fontWeight = FontWeight.Bold) },
+      title = {
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          ArshadBrandLogo(size = 32)
+          Text("Notifications & Alerts", color = GoldPrimary, fontWeight = FontWeight.Bold)
+        }
+      },
       text = {
         if (notifications.isEmpty()) {
           Text("No notifications at this time.", color = TextSecondaryDark)

@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.CustomerOrder
 import com.example.data.model.OrderStatus
+import com.example.ui.components.ArshadBrandLogo
 import com.example.ui.components.EmptyStateView
 import com.example.ui.components.OrderStatusTimeline
 import com.example.ui.theme.*
@@ -90,9 +91,15 @@ fun OrderHistoryCard(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
       ) {
-        Column {
-          Text(order.orderNumber, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
-          Text(formattedDate, color = TextMutedDark, fontSize = 11.sp)
+        Row(
+          verticalAlignment = Alignment.CenterVertically,
+          horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+          ArshadBrandLogo(size = 32)
+          Column {
+            Text(order.orderNumber, fontWeight = FontWeight.Bold, color = Color.White, fontSize = 14.sp)
+            Text(formattedDate, color = TextMutedDark, fontSize = 11.sp)
+          }
         }
 
         // Status badge

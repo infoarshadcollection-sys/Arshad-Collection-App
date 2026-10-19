@@ -116,7 +116,7 @@ fun RegisterScreen(
 
       // Official Arshad Collection Logo (Prominently centered at top)
       ArshadBrandLogo(
-        size = 92,
+        size = 110,
         modifier = Modifier.testTag("register_official_logo")
       )
 
@@ -131,7 +131,7 @@ fun RegisterScreen(
       )
 
       Text(
-        text = "Join Arshad Collection • Style • Quality • Trust",
+        text = "Join Arshad Collection™ • Style • Quality • Trust",
         color = GoldPrimary,
         fontSize = 13.sp,
         textAlign = TextAlign.Center,

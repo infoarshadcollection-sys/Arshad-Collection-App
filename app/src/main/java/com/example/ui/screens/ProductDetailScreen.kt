@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import com.example.data.model.Product
 import com.example.ui.components.ArshadBrandLogo
 import com.example.ui.components.ArshadTopBar
+import com.example.ui.components.ProductImageView
 import com.example.ui.theme.*
 import com.example.ui.viewmodel.ShopViewModel
 import com.example.util.CurrencyFormatter
@@ -236,11 +237,6 @@ fun ProductDetailScreen(
       // 2. Large Image Showcase
       item {
         val currentImageName = product.images.getOrNull(activeImageIndex) ?: product.images.firstOrNull() ?: ""
-        val imageResId = remember(currentImageName) {
-          if (currentImageName.isNotBlank()) {
-            context.resources.getIdentifier(currentImageName, "drawable", context.packageName)
-          } else 0
-        }
 
         Box(
           modifier = Modifier
@@ -248,28 +244,12 @@ fun ProductDetailScreen(
             .height(320.dp)
             .background(BlackSurface)
         ) {
-          if (imageResId != 0) {
-            Image(
-              painter = painterResource(id = imageResId),
-              contentDescription = product.name,
-              modifier = Modifier.fillMaxSize(),
-              contentScale = ContentScale.Crop
-            )
-          } else {
-            Box(
-              modifier = Modifier
-                .fillMaxSize()
-                .background(BlackSurfaceVariant),
-              contentAlignment = Alignment.Center
-            ) {
-              Icon(
-                imageVector = Icons.Default.ShoppingBag,
-                contentDescription = null,
-                tint = GoldPrimary.copy(alpha = 0.4f),
-                modifier = Modifier.size(72.dp)
-              )
-            }
-          }
+          ProductImageView(
+            imageSource = currentImageName,
+            contentDescription = product.name,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+          )
 
           // Discount Tag
           if (product.discountPercent > 0) {
@@ -316,9 +296,6 @@ fun ProductDetailScreen(
           ) {
             items(product.images.indices.toList()) { index ->
               val thumbName = product.images[index]
-              val thumbResId = remember(thumbName) {
-                context.resources.getIdentifier(thumbName, "drawable", context.packageName)
-              }
 
               Box(
                 modifier = Modifier
@@ -331,14 +308,12 @@ fun ProductDetailScreen(
                   )
                   .clickable { activeImageIndex = index }
               ) {
-                if (thumbResId != 0) {
-                  Image(
-                    painter = painterResource(id = thumbResId),
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                    contentScale = ContentScale.Crop
-                  )
-                }
+                ProductImageView(
+                  imageSource = thumbName,
+                  contentDescription = null,
+                  modifier = Modifier.fillMaxSize(),
+                  contentScale = ContentScale.Crop
+                )
               }
             }
           }

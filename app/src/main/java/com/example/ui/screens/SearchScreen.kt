@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.Product
@@ -165,23 +166,32 @@ fun SearchScreen(
               color = Color.White
             )
 
-            Row(
+            LazyRow(
               modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.spacedBy(8.dp)
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+              contentPadding = PaddingValues(horizontal = 2.dp)
             ) {
-              viewModel.popularSearches.take(3).forEach { term ->
-                SuggestionChip(
+              items(viewModel.popularSearches) { term ->
+                Surface(
                   onClick = { viewModel.performSearch(term) },
-                  label = { Text(term) },
-                  colors = SuggestionChipDefaults.suggestionChipColors(
-                    containerColor = BlackSurfaceVariant,
-                    labelColor = Color.White
-                  ),
-                  border = SuggestionChipDefaults.suggestionChipBorder(
-                    enabled = true,
-                    borderColor = BlackCardBorder
-                  )
-                )
+                  shape = RoundedCornerShape(20.dp),
+                  color = BlackSurfaceVariant,
+                  border = androidx.compose.foundation.BorderStroke(1.dp, BlackCardBorder)
+                ) {
+                  Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                  ) {
+                    Text(
+                      text = term,
+                      style = MaterialTheme.typography.labelMedium,
+                      color = Color.White,
+                      maxLines = 1,
+                      softWrap = false,
+                      overflow = TextOverflow.Visible
+                    )
+                  }
+                }
               }
             }
           }

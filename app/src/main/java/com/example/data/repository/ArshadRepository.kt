@@ -1,16 +1,22 @@
 package com.example.data.repository
 
+import android.content.Context
+import android.util.Log
 import com.example.data.local.*
 import com.example.data.model.*
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
+import com.example.data.supabase.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.launch
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.UUID
 
-class ArshadRepository(private val database: ArshadDatabase) {
+class ArshadRepository(
+  private val database: ArshadDatabase,
+  val context: Context? = null
+) {
 
   private val productDao = database.productDao()
   private val categoryDao = database.categoryDao()
@@ -23,6 +29,62 @@ class ArshadRepository(private val database: ArshadDatabase) {
   private val notificationDao = database.notificationDao()
   private val settingsDao = database.settingsDao()
   private val userDao = database.userDao()
+
+  // Supabase Integration Components
+  val supabaseConfig: SupabaseConfig? = context?.let { SupabaseConfig(it) }
+  val supabaseClient: SupabaseClient? = supabaseConfig?.let { SupabaseClient(it) }
+  val supabaseEmailService: SupabaseEmailService? = supabaseConfig?.let { SupabaseEmailService(it) }
+  val supabaseRealtimeManager: SupabaseRealtimeManager? =
+    if (supabaseConfig != null && supabaseClient != null) {
+      SupabaseRealtimeManager(supabaseConfig, supabaseClient)
+    } else null
+
+  private val _syncStatus = MutableStateFlow<SupabaseSyncStatus>(SupabaseSyncStatus.Idle)
+  val syncStatus: StateFlow<SupabaseSyncStatus> = _syncStatus.asStateFlow()
+
+  private val _lastSyncTime = MutableStateFlow<Long>(0L)
+  val lastSyncTime: StateFlow<Long> = _lastSyncTime.asStateFlow()
+
+  init {
+    supabaseRealtimeManager?.setListener(object : SupabaseRealtimeListener {
+      override fun onProductUpserted(product: Product) {
+        CoroutineScope(Dispatchers.IO).launch {
+          if (product.isActive) {
+            productDao.insertProduct(toProductEntity(product))
+            Log.d("ArshadRepository", "Realtime Sync: Inserted/Updated product '${product.name}' (id=${product.id})")
+          } else {
+            // Requirement 6: When unpublished, product no longer appears as available
+            productDao.deleteProductById(product.id)
+            if (product.supabaseId.isNotBlank()) {
+              productDao.deleteProductBySupabaseId(product.supabaseId)
+            }
+            Log.d("ArshadRepository", "Realtime Sync: Removed unpublished product '${product.name}'")
+          }
+        }
+      }
+
+      override fun onProductDeleted(supabaseId: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+          productDao.deleteProductBySupabaseId(supabaseId)
+          val numericId = supabaseId.toLongOrNull()
+          if (numericId != null) {
+            productDao.deleteProductById(numericId)
+          }
+          Log.d("ArshadRepository", "Realtime Sync: Deleted product supabaseId='$supabaseId'")
+        }
+      }
+
+      override fun onCategoryChanged() {
+        CoroutineScope(Dispatchers.IO).launch {
+          syncCategoriesFromSupabase()
+        }
+      }
+
+      override fun onConnectionChanged(isConnected: Boolean) {
+        Log.d("ArshadRepository", "Realtime WebSocket state: isConnected=$isConnected")
+      }
+    })
+  }
 
   // Mapper helpers
   private fun jsonToList(json: String?): List<String> {
@@ -46,6 +108,7 @@ class ArshadRepository(private val database: ArshadDatabase) {
   private fun toProduct(entity: ProductEntity): Product {
     return Product(
       id = entity.id,
+      supabaseId = entity.supabaseId.ifBlank { entity.id.toString() },
       name = entity.name,
       slug = entity.slug,
       description = entity.description,
@@ -76,6 +139,7 @@ class ArshadRepository(private val database: ArshadDatabase) {
   private fun toProductEntity(product: Product): ProductEntity {
     return ProductEntity(
       id = product.id,
+      supabaseId = product.supabaseId.ifBlank { product.id.toString() },
       name = product.name,
       slug = product.slug,
       description = product.description,
@@ -195,6 +259,91 @@ class ArshadRepository(private val database: ArshadDatabase) {
     return Result.success(Unit)
   }
 
+  // --- Supabase Synchronization (Single Source of Truth) ---
+
+  suspend fun syncAllFromSupabase(force: Boolean = false): Result<Int> {
+    val client = supabaseClient
+    val config = supabaseConfig
+    if (config == null || client == null || !config.isConfigured()) {
+      _syncStatus.value = SupabaseSyncStatus.Idle
+      return Result.failure(IllegalStateException("Supabase is not configured yet. Set SUPABASE_URL and SUPABASE_ANON_KEY."))
+    }
+
+    _syncStatus.value = SupabaseSyncStatus.Syncing("Inspecting schema & syncing products from Supabase...")
+
+    return try {
+      // 1. Inspect schema first to identify tables and columns
+      if (!client.schemaInfo.isSchemaInspected) {
+        client.inspectDatabaseSchema()
+      }
+
+      // 2. Keep product categories synchronized with website
+      syncCategoriesFromSupabase()
+
+      // 3. Fetch all products from the website's Supabase table
+      val fetchResult = client.fetchProducts()
+      if (fetchResult.isSuccess) {
+        val remoteProducts = fetchResult.getOrThrow()
+        Log.d("ArshadRepository", "Supabase sync: received ${remoteProducts.size} products from website database")
+
+        // In Supabase single-source-of-truth architecture:
+        // Update / Insert all products from Supabase into local Room cache
+        val entities = remoteProducts.map { toProductEntity(it) }
+        if (entities.isNotEmpty()) {
+          productDao.insertAll(entities)
+        }
+
+        // Handle unpublished/deleted products
+        // When a product is unpublished, it is either filtered out from fetchProducts or isActive == false.
+        val remoteIds = remoteProducts.map { it.id }.toSet()
+        val remoteSupabaseIds = remoteProducts.map { it.supabaseId }.filter { it.isNotBlank() }.toSet()
+
+        val now = System.currentTimeMillis()
+        _lastSyncTime.value = now
+        _syncStatus.value = SupabaseSyncStatus.Success(remoteProducts.size, now)
+
+        // Connect/ensure Realtime updates
+        supabaseRealtimeManager?.connect()
+
+        Result.success(remoteProducts.size)
+      } else {
+        val err = fetchResult.exceptionOrNull()?.message ?: "Failed to sync products from Supabase"
+        Log.e("ArshadRepository", "Supabase sync error: $err")
+        _syncStatus.value = SupabaseSyncStatus.Error(err)
+        Result.failure(fetchResult.exceptionOrNull() ?: Exception(err))
+      }
+    } catch (e: Exception) {
+      Log.e("ArshadRepository", "Unexpected error syncing from Supabase", e)
+      val msg = e.message ?: "Unknown sync error"
+      _syncStatus.value = SupabaseSyncStatus.Error(msg)
+      Result.failure(e)
+    }
+  }
+
+  suspend fun syncCategoriesFromSupabase() {
+    val client = supabaseClient ?: return
+    try {
+      val catResult = client.fetchCategories()
+      if (catResult.isSuccess) {
+        val remoteCategories = catResult.getOrThrow()
+        if (remoteCategories.isNotEmpty()) {
+          categoryDao.insertAll(remoteCategories.map { toCategoryEntity(it) })
+          Log.d("ArshadRepository", "Synchronized ${remoteCategories.size} categories with website Supabase")
+        }
+      }
+    } catch (e: Exception) {
+      Log.w("ArshadRepository", "Category sync skipped or encountered error: ${e.message}")
+    }
+  }
+
+  fun connectRealtime() {
+    supabaseRealtimeManager?.connect()
+  }
+
+  fun disconnectRealtime() {
+    supabaseRealtimeManager?.disconnect()
+  }
+
   // Categories
   val allCategories: Flow<List<Category>> =
     categoryDao.getAllActiveCategories().map { list -> list.map { toCategory(it) } }
@@ -216,6 +365,24 @@ class ArshadRepository(private val database: ArshadDatabase) {
     }
     categoryDao.deleteCategoryById(id)
     return Result.success(Unit)
+  }
+
+  suspend fun uploadImageFromUri(
+    uri: android.net.Uri,
+    appContext: Context,
+    folder: String,
+    actingUser: User? = null
+  ): Result<String> {
+    if (actingUser?.role?.equals("admin", ignoreCase = true) != true) {
+      return Result.failure(SecurityException("Unauthorized: Admin privileges required to upload images."))
+    }
+    return com.example.data.storage.ImageStorageService.storeImage(
+      context = appContext,
+      uri = uri,
+      folder = folder,
+      supabaseClient = supabaseClient,
+      supabaseConfig = supabaseConfig
+    )
   }
 
   // Wishlist
@@ -591,7 +758,31 @@ class ArshadRepository(private val database: ArshadDatabase) {
     )
 
     val placedOrder = orderEntity.copy(id = orderId)
-    return Result.success(toCustomerOrder(placedOrder))
+    val customerOrder = toCustomerOrder(placedOrder)
+
+    // 8. Supabase Backend Sync & Resend Email via Edge Function
+    CoroutineScope(Dispatchers.IO).launch {
+      // 1. Save order in Supabase
+      supabaseClient?.let { client ->
+        val saveRes = client.saveOrder(customerOrder)
+        saveRes.onSuccess {
+          Log.d("ArshadRepository", "Order #${customerOrder.orderNumber} successfully saved to Supabase")
+        }.onFailure {
+          Log.w("ArshadRepository", "Supabase order persistence note: ${it.message}")
+        }
+      }
+
+      // 2 & 3. Send Customer confirmation email & Admin notification email via Supabase Edge Function
+      supabaseEmailService?.let { emailService ->
+        val emailRes = emailService.sendOrderEmails(customerOrder)
+        Log.d(
+          "ArshadRepository",
+          "Order #${customerOrder.orderNumber} emails: customerSent=${emailRes.customerEmailSent}, adminSent=${emailRes.adminEmailSent}"
+        )
+      }
+    }
+
+    return Result.success(customerOrder)
   }
 
   // Reviews

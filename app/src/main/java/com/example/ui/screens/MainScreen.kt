@@ -16,6 +16,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -252,7 +254,7 @@ fun MainScreen(
                           containerColor = GoldPrimary,
                           contentColor = BlackMain
                         ) {
-                          Text("${item.badgeCount}", fontWeight = FontWeight.Bold, fontSize = 10.sp)
+                          Text("${item.badgeCount}", fontWeight = FontWeight.Bold, fontSize = 9.sp)
                         }
                       }
                     }
@@ -260,16 +262,23 @@ fun MainScreen(
                     Icon(
                       imageVector = if (isSelected) item.selectedIcon else item.unselectedIcon,
                       contentDescription = item.title,
-                      tint = if (isSelected) GoldPrimary else TextSecondaryDark
+                      tint = if (isSelected) GoldPrimary else TextSecondaryDark,
+                      modifier = Modifier.size(22.dp)
                     )
                   }
                 },
+                alwaysShowLabel = true,
                 label = {
                   Text(
                     text = item.title,
-                    fontSize = 11.sp,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                    color = if (isSelected) GoldPrimary else TextSecondaryDark
+                    fontSize = 9.sp,
+                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                    color = if (isSelected) GoldPrimary else TextSecondaryDark,
+                    maxLines = 1,
+                    softWrap = false,
+                    letterSpacing = (-0.5).sp,
+                    textAlign = TextAlign.Center,
+                    overflow = TextOverflow.Ellipsis
                   )
                 },
                 colors = NavigationBarItemDefaults.colors(
@@ -335,11 +344,13 @@ fun MainScreen(
             )
           }
 
-          // Floating AI Assistant Button
-          FloatingAiAssistantButton(
-            onClick = { viewModel.openAiAssistant() },
-            modifier = Modifier.align(Alignment.BottomEnd)
-          )
+          // Floating AI Assistant Button (Hidden on Cart tab to ensure it never covers the shopping cart or checkout)
+          if (selectedTab != 3) {
+            FloatingAiAssistantButton(
+              onClick = { viewModel.openAiAssistant() },
+              modifier = Modifier.align(Alignment.BottomEnd)
+            )
+          }
         }
       }
     }

@@ -32,15 +32,6 @@ import kotlinx.coroutines.delay
 fun SplashScreen(
   onSplashFinished: () -> Unit
 ) {
-  val context = LocalContext.current
-  val logoResId = remember(context) {
-    var id = context.resources.getIdentifier("logo_arshad_official", "drawable", context.packageName)
-    if (id == 0) {
-      id = context.resources.getIdentifier("arshad_official_logo_1787990063785", "drawable", context.packageName)
-    }
-    id
-  }
-
   val transition = rememberInfiniteTransition(label = "gold_glow")
   val pulseScale by transition.animateFloat(
     initialValue = 0.98f,
@@ -82,26 +73,18 @@ fun SplashScreen(
       // Official Original Arshad Collection Logo (Exact uploaded graphic, 1:1 fit)
       Box(
         modifier = Modifier
-          .fillMaxWidth(0.78f)
+          .fillMaxWidth(0.82f)
           .aspectRatio(1f),
         contentAlignment = Alignment.Center
       ) {
-        if (logoResId != 0) {
-          Image(
-            painter = painterResource(id = logoResId),
-            contentDescription = "Official Arshad Collection Logo",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit
-          )
-        } else {
-          Text(
-            text = "ARSHAD COLLECTION",
-            color = GoldPrimary,
-            fontSize = 24.sp,
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.Bold
-          )
-        }
+        Image(
+          painter = painterResource(id = com.example.R.drawable.arshad_official_logo),
+          contentDescription = "Official Arshad Collection Logo",
+          modifier = Modifier
+            .fillMaxSize()
+            .aspectRatio(1f),
+          contentScale = ContentScale.Fit
+        )
       }
     }
 

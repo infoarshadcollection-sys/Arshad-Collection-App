@@ -55,6 +55,15 @@ interface ProductDao {
 
   @Query("DELETE FROM products WHERE id = :id")
   suspend fun deleteProductById(id: Long)
+
+  @Query("SELECT * FROM products WHERE supabaseId = :supabaseId LIMIT 1")
+  suspend fun getProductBySupabaseId(supabaseId: String): ProductEntity?
+
+  @Query("DELETE FROM products WHERE supabaseId = :supabaseId")
+  suspend fun deleteProductBySupabaseId(supabaseId: String)
+
+  @Query("DELETE FROM products")
+  suspend fun clearAllProducts()
 }
 
 @Dao
@@ -79,6 +88,9 @@ interface CategoryDao {
 
   @Query("DELETE FROM categories WHERE id = :id")
   suspend fun deleteCategoryById(id: String)
+
+  @Query("DELETE FROM categories")
+  suspend fun clearAllCategories()
 }
 
 @Dao

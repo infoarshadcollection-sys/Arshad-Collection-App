@@ -6,6 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.data.local.ArshadDatabase
 import com.example.data.model.*
 import com.example.data.repository.ArshadRepository
+import com.example.data.supabase.RealtimeConnectionState
+import com.example.data.supabase.SupabaseSyncStatus
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -56,7 +58,14 @@ data class CheckoutForm(
 class ShopViewModel(application: Application) : AndroidViewModel(application) {
 
   private val database = ArshadDatabase.getDatabase(application)
-  val repository = ArshadRepository(database)
+  val repository = ArshadRepository(database, application)
+
+  // Supabase Sync States
+  val syncStatus: StateFlow<SupabaseSyncStatus> = repository.syncStatus
+  val lastSyncTime: StateFlow<Long> = repository.lastSyncTime
+  val realtimeState: StateFlow<RealtimeConnectionState> =
+    repository.supabaseRealtimeManager?.connectionState ?: MutableStateFlow(RealtimeConnectionState.Disconnected)
+  val isSupabaseConfigured = MutableStateFlow(repository.supabaseConfig?.isConfigured() == true)
 
   // Navigation / UI State
   val currentScreen = MutableStateFlow("splash") // splash, onboarding, login, register, forgot_password, main, product_detail, checkout, order_confirmation, order_detail, admin_portal
@@ -83,6 +92,24 @@ class ShopViewModel(application: Application) : AndroidViewModel(application) {
           isUserLoggedIn.value = true
         }
       }
+      // Trigger initial Supabase sync if configured
+      if (repository.supabaseConfig?.isConfigured() == true) {
+        repository.syncAllFromSupabase()
+      }
+    }
+  }
+
+  fun refreshFromSupabase(force: Boolean = false) {
+    viewModelScope.launch {
+      repository.syncAllFromSupabase(force)
+    }
+  }
+
+  fun updateSupabaseConfig(url: String, anonKey: String, bucket: String = "products") {
+    repository.supabaseConfig?.saveCredentials(url, anonKey, bucket)
+    isSupabaseConfigured.value = repository.supabaseConfig?.isConfigured() == true
+    viewModelScope.launch {
+      repository.syncAllFromSupabase(force = true)
     }
   }
 
@@ -417,6 +444,39 @@ class ShopViewModel(application: Application) : AndroidViewModel(application) {
     }
   }
 
+  // --- Admin Image Upload Management ---
+  val isUploadingImage = MutableStateFlow(false)
+  val uploadMessage = MutableStateFlow<String?>(null)
+  val uploadError = MutableStateFlow<String?>(null)
+
+  fun uploadImage(
+    uri: android.net.Uri,
+    context: android.content.Context,
+    folder: String,
+    onSuccess: (String) -> Unit
+  ) {
+    viewModelScope.launch {
+      isUploadingImage.value = true
+      uploadMessage.value = "Uploading image..."
+      uploadError.value = null
+      val result = repository.uploadImageFromUri(uri, context, folder, currentUser.value)
+      isUploadingImage.value = false
+      if (result.isSuccess) {
+        val url = result.getOrThrow()
+        uploadMessage.value = "Image uploaded successfully!"
+        onSuccess(url)
+      } else {
+        uploadError.value = result.exceptionOrNull()?.message ?: "Upload failed"
+      }
+    }
+  }
+
+  fun clearUploadStatus() {
+    uploadMessage.value = null
+    uploadError.value = null
+    isUploadingImage.value = false
+  }
+
   // --- Customer Authentication Actions ---
 
   fun register(
@@ -590,6 +650,40 @@ class ShopViewModel(application: Application) : AndroidViewModel(application) {
         aiMessages.value = aiMessages.value + errorMsg
       } finally {
         isAiThinking.value = false
+      }
+    }
+  }
+
+  /**
+   * Manually trigger sending/resending order confirmation and admin alert emails.
+   */
+  fun resendOrderEmails(order: CustomerOrder, onResult: ((com.example.data.supabase.OrderEmailResult) -> Unit)? = null) {
+    viewModelScope.launch {
+      val emailService = repository.supabaseEmailService
+      if (emailService != null) {
+        val result = emailService.sendOrderEmails(order)
+        onResult?.invoke(result)
+      } else {
+        onResult?.invoke(com.example.data.supabase.OrderEmailResult(customerEmailError = "Email service not initialized"))
+      }
+    }
+  }
+
+  /**
+   * Sends a test verification email through the Supabase Edge Function.
+   */
+  fun testSupabaseEmail(recipient: String = com.example.data.supabase.SupabaseEmailService.ADMIN_EMAIL, onResult: ((Boolean, String) -> Unit)? = null) {
+    viewModelScope.launch {
+      val emailService = repository.supabaseEmailService
+      if (emailService != null) {
+        val res = emailService.sendTestEmail(recipient)
+        res.onSuccess { id ->
+          onResult?.invoke(true, "Test email dispatched successfully! ID: $id")
+        }.onFailure { err ->
+          onResult?.invoke(false, err.message ?: "Failed to dispatch test email")
+        }
+      } else {
+        onResult?.invoke(false, "Supabase email service is not configured")
       }
     }
   }

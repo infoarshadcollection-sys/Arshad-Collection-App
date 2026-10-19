@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.ui.components.ArshadTopBar
+import com.example.ui.components.ProductImageView
 import com.example.ui.theme.*
 import com.example.ui.viewmodel.ShopViewModel
 import com.example.util.CurrencyFormatter
@@ -309,10 +310,26 @@ fun CheckoutScreen(
             cartItems.forEach { item ->
               Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
               ) {
-                Text("${item.quantity}x ${item.product.name}", color = TextSecondaryDark, fontSize = 12.sp, modifier = Modifier.weight(1f), maxLines = 1)
-                Text(CurrencyFormatter.format(item.itemTotal), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                Box(
+                  modifier = Modifier
+                    .size(44.dp)
+                    .clip(RoundedCornerShape(6.dp))
+                    .background(BlackSurfaceVariant)
+                ) {
+                  ProductImageView(
+                    imageSource = item.product.images.firstOrNull() ?: "",
+                    contentDescription = item.product.name,
+                    modifier = Modifier.fillMaxSize()
+                  )
+                }
+                Column(modifier = Modifier.weight(1f)) {
+                  Text(item.product.name, color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+                  Text("Qty: ${item.quantity} • ${item.selectedSize.ifBlank { "Standard" }}", color = TextSecondaryDark, fontSize = 11.sp)
+                }
+                Text(CurrencyFormatter.format(item.itemTotal), color = GoldPrimary, fontSize = 12.sp, fontWeight = FontWeight.Bold)
               }
             }
 

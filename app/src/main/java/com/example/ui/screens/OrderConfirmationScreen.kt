@@ -118,10 +118,19 @@ fun OrderConfirmationScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
           ) {
-            ArshadBrandLogo(size = 32)
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+              ArshadBrandLogo(size = 36)
+              Column {
+                Text("ARSHAD COLLECTION™", fontWeight = FontWeight.Bold, color = GoldPrimary, fontSize = 12.sp)
+                Text("Official Order Receipt", color = TextSecondaryDark, fontSize = 10.sp)
+              }
+            }
             Column(horizontalAlignment = Alignment.End) {
-              Text("ORDER RECEIPT", fontWeight = FontWeight.Bold, color = GoldPrimary, fontSize = 12.sp)
-              Text(order.orderNumber, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+              Text("ORDER #", fontWeight = FontWeight.Bold, color = GoldPrimary, fontSize = 11.sp)
+              Text(order.orderNumber, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
             }
           }
 
@@ -129,6 +138,9 @@ fun OrderConfirmationScreen(
 
           SummaryRow("Customer Name", order.customerName)
           SummaryRow("Phone Number", order.phone)
+          if (order.email.isNotBlank()) {
+            SummaryRow("Email Address", order.email)
+          }
           SummaryRow("Shipping City", order.city)
           SummaryRow("Delivery Address", order.shippingAddress)
           SummaryRow("Tracking Number", order.trackingNumber, valueColor = GoldWarm)
@@ -175,6 +187,28 @@ fun OrderConfirmationScreen(
           ) {
             Text("Total Amount", color = GoldPrimary, fontWeight = FontWeight.Bold, fontSize = 15.sp)
             Text(CurrencyFormatter.format(order.total), color = GoldPrimary, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
+          }
+
+          if (order.email.isNotBlank()) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Surface(
+              color = Color(0xFF132B1B),
+              shape = RoundedCornerShape(8.dp),
+              modifier = Modifier.fillMaxWidth()
+            ) {
+              Row(
+                modifier = Modifier.padding(10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+              ) {
+                Icon(Icons.Default.Email, contentDescription = null, tint = GreenStock, modifier = Modifier.size(16.dp))
+                Text(
+                  "Order receipt & details sent to ${order.email}",
+                  style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                  color = Color(0xFF8CF49C)
+                )
+              }
+            }
           }
         }
       }
